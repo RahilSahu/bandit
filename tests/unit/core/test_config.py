@@ -69,6 +69,20 @@ class TestInit(testtools.TestCase):
             utils.ConfigError, f.name, config.BanditConfig, f.name
         )
 
+    def test_ini_config_via_dash_c_gets_helpful_error(self):
+        # An INI style .bandit file handed to -c must fail with an
+        # explanation of the two config mechanisms, not a bare parse
+        # error (issue #317).
+
+        ini_contents = "[bandit]\ntests = B101,B102,B301\n"
+        f = self.useFixture(TempFile(ini_contents))
+        self.assertRaisesRegex(
+            utils.ConfigError,
+            "looks like an INI style",
+            config.BanditConfig,
+            f.name,
+        )
+
 
 class TestGetOption(testtools.TestCase):
     def setUp(self):

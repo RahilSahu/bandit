@@ -22,6 +22,22 @@ from bandit.core import utils
 LOG = logging.getLogger(__name__)
 
 
+def _looks_like_ini(data: bytes) -> bool:
+    """Return True when the content has an INI-style [bandit] section.
+
+    Bandit has two config mechanisms that are easy to confuse: an INI
+    file named .bandit in the project directory (found automatically)
+    and the YAML or TOML file given with -c. A bare [bandit] header
+    line never appears in a YAML document, so it is a reliable sign
+    that the user handed the INI file to -c.
+    """
+    text = data.decode("utf-8", errors="ignore")
+    for line in text.splitlines():
+        if line.strip().lower() == "[bandit]":
+            return True
+    return False
+
+
 class BanditConfig:
     def __init__(self, config_file=None):
         """Attempt to initialize a config dictionary from a yaml file.
@@ -59,11 +75,22 @@ class BanditConfig:
                     LOG.error(err)
                     raise utils.ConfigError("Error parsing file.", config_file)
             else:
+                with f:
+                    data = f.read()
                 try:
-                    with f:
-                        self._config = yaml.safe_load(f)
+                    self._config = yaml.safe_load(data)
                 except yaml.YAMLError as err:
                     LOG.error(err)
+                    if _looks_like_ini(data):
+                        raise utils.ConfigError(
+                            "Error parsing file: this looks like an INI "
+                            "style .bandit file (it has a [bandit] "
+                            "section). Files passed with -c must be YAML "
+                            "or TOML. An INI .bandit file is picked up "
+                            "automatically when it sits in the project "
+                            "directory, so it does not need -c.",
+                            config_file,
+                        )
                     raise utils.ConfigError("Error parsing file.", config_file)
 
             self.validate(config_file)

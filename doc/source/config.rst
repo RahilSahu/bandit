@@ -23,7 +23,9 @@ The currently supported arguments are:
   comma separated list of tests to run
 
 To use this, put an INI file named `.bandit` in your project's directory.
-Command line arguments must be in `[bandit]` section.
+Command line arguments must be in `[bandit]` section. The INI file is
+found automatically; do not pass it with `-c`, which expects a YAML or
+TOML file as shown below.
 For example:
 
 .. code-block:: ini
